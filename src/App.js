@@ -9,6 +9,7 @@ import Statistik from "./page/Statistik";
 import Pengaturan from "./page/Pengaturan";
 import Login from "./page/Login";
 import Register from "./page/Register";
+import Profile from "./page/Profile";
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
             <Route path="/riwayat-transaksi" element={<RiwayatTransaksi />} />
             <Route path="/statistik" element={<Statistik />} />
             <Route path="/pengaturan" element={<Pengaturan />} />
+            <Route path="/profile" element={<Profile />} />
           </Routes>
         </main>
       </div>
