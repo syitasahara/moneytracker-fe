@@ -6,8 +6,15 @@ import api from "../api/api";
 const ProfilePage = () => {
   const [currentPage, setCurrentPage] = useState("profile");
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true); 
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // ⬇️ ringkasan keuangan (sama source-nya dengan Dashboard)
+  const [financeSummary, setFinanceSummary] = useState({
+    income: 0,
+    expense: 0,
+    balance: 0,
+  });
 
   useEffect(() => {
     const savedUser = localStorage.getItem("user");
@@ -16,7 +23,7 @@ const ProfilePage = () => {
     if (savedUser) {
       try {
         parsedUser = JSON.parse(savedUser);
-        setUser(parsedUser); 
+        setUser(parsedUser);
       } catch (e) {
         console.error("Gagal parse user dari localStorage:", e);
       }
@@ -42,7 +49,23 @@ const ProfilePage = () => {
       }
     };
 
+    const fetchDashboardSummary = async () => {
+      try {
+        const res = await api.get("/dashboard");
+        const data = res.data || {};
+
+        setFinanceSummary({
+          income: Number(data.income) || 0,
+          expense: Number(data.expense) || 0,
+          balance: Number(data.balance) || 0,
+        });
+      } catch (err) {
+        console.error("Gagal ambil ringkasan keuangan:", err);
+      }
+    };
+
     fetchProfile();
+    fetchDashboardSummary();
   }, []);
 
   const handleEditProfile = () => {
@@ -224,9 +247,9 @@ const ProfilePage = () => {
 
                 <div className="text-center mb-6">
                   <p className="text-4xl font-bold text-gray-900">
-                    {user.balance
-                      ? `Rp ${Number(user.balance).toLocaleString("id-ID")}`
-                      : "Rp 0"}
+                    {`Rp ${Number(
+                      financeSummary.balance || user.balance || 0
+                    ).toLocaleString("id-ID")}`}
                   </p>
                 </div>
 
@@ -234,13 +257,17 @@ const ProfilePage = () => {
                   <div className="flex justify-between items-center">
                     <span className="text-gray-600">Pemasukan</span>
                     <span className="text-green-600 font-semibold">
-                      Rp 3.200.000
+                      {`Rp ${Number(
+                        financeSummary.income || 0
+                      ).toLocaleString("id-ID")}`}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-gray-600">Pengeluaran</span>
                     <span className="text-red-600 font-semibold">
-                      Rp 350.000
+                      {`Rp ${Number(
+                        financeSummary.expense || 0
+                      ).toLocaleString("id-ID")}`}
                     </span>
                   </div>
                 </div>
@@ -253,6 +280,8 @@ const ProfilePage = () => {
   );
 };
 
+// ⬇️ komponen EditProfilePage di file yang sama,
+// supaya EditProfilePage terdefinisi dan Camera terpakai
 const EditProfilePage = ({ onBack, user }) => {
   const [formData, setFormData] = useState({
     username: user?.username || "",
@@ -265,7 +294,7 @@ const EditProfilePage = ({ onBack, user }) => {
   });
 
   const [profileImage, setProfileImage] = useState(user?.image || null);
-  const [loading, setLoading] = useState(false); // utk submit & upload
+  const [loading, setLoading] = useState(false);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -293,8 +322,6 @@ const EditProfilePage = ({ onBack, user }) => {
         },
       });
 
-      console.log("Upload success:", res.data);
-
       const updatedUser = res.data.user;
 
       if (!updatedUser?.image) {
@@ -318,7 +345,7 @@ const EditProfilePage = ({ onBack, user }) => {
   };
 
   const handleCancel = () => {
-    onBack(); 
+    onBack();
   };
 
   const handleSubmit = async () => {
@@ -337,7 +364,7 @@ const EditProfilePage = ({ onBack, user }) => {
         domisili: formData.domisili,
         status_mahasiswa: formData.statusMahasiswa,
         jenis_kelamin: formData.jenisKelamin,
-        image: formData.image, 
+        image: formData.image,
       };
 
       const res = await api.put(`/users/${user.id}`, payload);
