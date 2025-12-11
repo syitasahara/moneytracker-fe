@@ -1,56 +1,102 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Sidebar from "../components/Sidebar";
+import api from "../api/api";
+import { useNavigate } from "react-router-dom";
 
-const TambahTransaksi = () => {
+function TambahTransaksi() {
   const [formData, setFormData] = useState({
     type: "pemasukan",
     amount: "",
     name: "",
-    category: "",
+    category_id: "",
     date: "",
-    paymentMethod: "tunai",
+    payment_method: "tunai",
   });
 
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+
+  // Fetch categories dari API
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  const fetchCategories = async () => {
+    try {
+      const response = await api.get("/categories");
+      setCategories(response.data.categories || []);
+    } catch (err) {
+      console.error("Error fetching categories:", err);
+      // Fallback ke data static jika API gagal
+      setCategories([
+        { id: 1, name: "makanan & minuman" },
+        { id: 2, name: "transportasi" },
+        { id: 3, name: "hiburan" },
+        { id: 4, name: "lainnya" },
+      ]);
+    }
+  };
+
+  // HANDLE INPUT UMUM
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prevState) => ({
-      ...prevState,
-      [name]: value,
-    }));
+    setFormData({ ...formData, [name]: value });
   };
 
   const handlePaymentMethodChange = (method) => {
-    setFormData((prevState) => ({
-      ...prevState,
-      paymentMethod: method,
-    }));
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    // Handle form submission here
-    console.log("Form data:", formData);
+    setFormData({ ...formData, payment_method: method });
   };
 
   const handleCancel = () => {
-    // Handle cancel action
-    setFormData({
-      type: "pemasukan",
-      amount: "",
-      name: "",
-      category: "",
-      date: "",
-      paymentMethod: "tunai",
-    });
+    navigate("/riwayat-transaksi");
+  };
+
+  // SUBMIT KE BACKEND
+  const handleSubmit = async (e) => {
+    if (e) e.preventDefault();
+
+    if (!formData.amount) return alert("Nominal wajib diisi.");
+    if (!formData.name) return alert("Nama wajib diisi.");
+    if (formData.type === "pengeluaran" && !formData.category_id)
+      return alert("Kategori pengeluaran wajib diisi.");
+
+    setLoading(true);
+
+    try {
+      const payload = {
+        type: formData.type === "pemasukan" ? "income" : "expense",
+        amount: Number(formData.amount),
+        name: formData.name,
+        payment_method:
+          formData.payment_method === "tunai" ? "cash" : "non-cash",
+        transaction_date:
+          formData.date || new Date().toISOString().split("T")[0],
+        ...(formData.type === "pengeluaran" && {
+          category_id: Number(formData.category_id),
+        }),
+      };
+
+      await api.post("/transactions", payload);
+
+      alert("Transaksi berhasil ditambahkan!");
+      navigate("/riwayat-transaksi");
+    } catch (err) {
+      console.error(err);
+      alert(
+        "Gagal menambahkan transaksi: " +
+          (err.response?.data?.message || err.message)
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
 
-      {/* Konten Utama */}
       <main className="flex-1 p-6">
-        {/* Header */}
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-gray-800">Tambah Transaksi</h1>
           <p className="text-gray-600 mt-1">
@@ -58,185 +104,112 @@ const TambahTransaksi = () => {
           </p>
         </div>
 
-        
-
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Form Section */}
           <div className="lg:col-span-2">
             <div className="bg-white rounded-lg shadow-sm p-6">
-              {/* Form Title */}
               <h2 className="text-lg font-semibold text-gray-800 mb-6 pb-4 border-b border-gray-200">
                 Form Transaksi
               </h2>
 
-              {/* Type Selection Buttons */}
+              {/* Type */}
               <div className="flex mb-8 gap-2">
                 <button
                   type="button"
                   onClick={() =>
                     setFormData({ ...formData, type: "pemasukan" })
                   }
-                  className={`flex-1 py-3 px-4 text-center font-medium rounded-lg border flex items-center justify-center gap-2 ${
+                  className={`flex-1 py-3 px-4 rounded-lg border transition-all ${
                     formData.type === "pemasukan"
-                      ? "bg-[#F0FDF4] text-[#16A34A] border-[#22C55E]"
-                      : "bg-gray-50 text-gray-700 border-gray-300"
+                      ? "bg-[#F0FDF4] text-[#16A34A] border-[#22C55E] shadow-sm"
+                      : "bg-gray-50 text-gray-700 border-gray-300 hover:bg-gray-100"
                   }`}
                 >
-                  <svg
-                    className="w-5 h-5"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
                   Pemasukan
                 </button>
+
                 <button
                   type="button"
                   onClick={() =>
                     setFormData({ ...formData, type: "pengeluaran" })
                   }
-                  className={`flex-1 py-3 px-4 text-center font-medium rounded-lg border flex items-center justify-center gap-2 ${
+                  className={`flex-1 py-3 px-4 rounded-lg border transition-all ${
                     formData.type === "pengeluaran"
-                      ? "bg-[#FFE8E8] text-[#DC2626] border-[#DC2626]"
-                      : "bg-gray-50 text-gray-700 border-gray-300"
+                      ? "bg-[#FFE8E8] text-[#DC2626] border-[#DC2626] shadow-sm"
+                      : "bg-gray-50 text-gray-700 border-gray-300 hover:bg-gray-100"
                   }`}
                 >
-                  <svg
-                    className="w-5 h-5"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 000 2h6a1 1 0 100-2H7z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
                   Pengeluaran
                 </button>
               </div>
 
-              {/* Form Content */}
-              <div className="space-y-6">
-                {/* Amount Input */}
-                <div>
+              {/* Amount */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Jumlah (Rp) <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">
+                    Rp
+                  </div>
+                  <input
+                    type="number"
+                    name="amount"
+                    value={formData.amount}
+                    onChange={handleChange}
+                    className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    placeholder="0"
+                  />
+                </div>
+              </div>
+
+              {/* Name */}
+              <div className="mt-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  {formData.type === "pemasukan"
+                    ? "Nama Pemasukan"
+                    : "Nama Pengeluaran"}{" "}
+                  <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                  placeholder={`Masukkan nama ${
+                    formData.type === "pemasukan" ? "pemasukan" : "pengeluaran"
+                  }`}
+                />
+              </div>
+
+              {/* Category */}
+              {formData.type === "pengeluaran" && (
+                <div className="mt-6">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Jumlah (Rp)
+                    Kategori <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
-                    <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
-                      Rp
-                    </div>
-                    <input
-                      type="number"
-                      name="amount"
-                      value={formData.amount}
-                      onChange={handleChange}
-                      placeholder="0"
-                      className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
-                </div>
-
-                {/* Name Input */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    {formData.type === "pemasukan"
-                      ? "Nama Pemasukan"
-                      : "Nama Pengeluaran"}
-                  </label>
-                  <input
-                    type="text"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleChange}
-                    placeholder={
-                      formData.type === "pemasukan"
-                        ? "Nama Pemasukan"
-                        : "Nama Pengeluaran"
-                    }
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
-
-                {/* Category Input (only for pengeluaran) */}
-                {formData.type === "pengeluaran" && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Kategori
-                    </label>
                     <select
-                      name="category"
-                      value={formData.category}
+                      name="category_id"
+                      value={formData.category_id}
                       onChange={handleChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-4 py-2.5 text-sm font-medium border border-gray-300 rounded-lg bg-white hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors cursor-pointer appearance-none"
                     >
                       <option value="">Pilih Kategori</option>
-                      <option value="makanan">Makanan & Minuman</option>
-                      <option value="transportasi">Transportasi</option>
-                      <option value="hiburan">Hiburan</option>
-                      <option value="lainnya">Lainnya</option>
+                      {categories.map((cat) => (
+                        <option key={cat.id} value={cat.id}>
+                          {cat.name
+                            .split(" ")
+                            .map(
+                              (word) =>
+                                word.charAt(0).toUpperCase() + word.slice(1)
+                            )
+                            .join(" ")}
+                        </option>
+                      ))}
                     </select>
-                  </div>
-                )}
-
-                {/* Date Input */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Tanggal
-                  </label>
-                  <input
-                    type="date"
-                    name="date"
-                    value={formData.date}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
-
-                {/* Payment Method */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-3">
-                    Metode Pembayaran
-                  </label>
-                  <div className="flex space-x-3">
-                    <button
-                      type="button"
-                      onClick={() => handlePaymentMethodChange("tunai")}
-                      className={`flex-1 py-3 px-4 rounded-lg border flex items-center justify-center gap-2 ${
-                        formData.paymentMethod === "tunai"
-                          ? "bg-[#EEF2FF] text-[#3B82F6] border-[#3B82F6] font-medium"
-                          : "bg-gray-50 text-gray-700 border-gray-300 hover:bg-gray-100"
-                      }`}
-                    >
-                      <svg
-                        className="w-5 h-5"
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                      >
-                        <path
-                          fillRule="evenodd"
-                          d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2H4z"
-                          clipRule="evenodd"
-                        />
-                        <path d="M2 6a2 2 0 012-2h12a2 2 0 012 2v1H2V6zm0 3v5a2 2 0 002 2h12a2 2 0 002-2V9H2z" />
-                      </svg>
-                      Tunai
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handlePaymentMethodChange("non-tunai")}
-                      className={`flex-1 py-3 px-4 rounded-lg border flex items-center justify-center gap-2 ${
-                        formData.paymentMethod === "non-tunai"
-                          ? "bg-[#EEF2FF] text-[#3B82F6] border-[#3B82F6] font-medium"
-                          : "bg-gray-50 text-gray-700 border-gray-300 hover:bg-gray-100"
-                      }`}
-                    >
+                    {/* Custom Arrow Icon */}
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
                       <svg
                         className="w-5 h-5"
                         fill="none"
@@ -247,47 +220,91 @@ const TambahTransaksi = () => {
                           strokeLinecap="round"
                           strokeLinejoin="round"
                           strokeWidth={2}
-                          d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
+                          d="M19 9l-7 7-7-7"
                         />
                       </svg>
-                      Non-Tunai
-                    </button>
+                    </div>
                   </div>
+                </div>
+              )}
+
+              {/* Date */}
+              <div className="mt-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Tanggal
+                </label>
+                <input
+                  type="date"
+                  name="date"
+                  value={formData.date}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                />
+              </div>
+
+              {/* Payment Method */}
+              <div className="mt-6">
+                <label className="block text.sm font-medium text-gray-700 mb-2">
+                  Metode Pembayaran <span className="text-red-500">*</span>
+                </label>
+                <div className="flex gap-3 mt-2">
+                  <button
+                    type="button"
+                    onClick={() => handlePaymentMethodChange("tunai")}
+                    className={`flex-1 py-3 px-4 rounded-lg border transition-all ${
+                      formData.payment_method === "tunai"
+                        ? "bg-[#EEF2FF] text-[#3B82F6] border-[#3B82F6] shadow-sm"
+                        : "bg-gray-50 border-gray-300 hover:bg-gray-100"
+                    }`}
+                  >
+                    Tunai
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handlePaymentMethodChange("non-tunai")}
+                    className={`flex-1 py-3 px-4 rounded-lg border transition-all ${
+                      formData.payment_method === "non-tunai"
+                        ? "bg-[#EEF2FF] text-[#3B82F6] border-[#3B82F6] shadow-sm"
+                        : "bg-gray-50 border-gray-300 hover:bg-gray-100"
+                    }`}
+                  >
+                    Non-Tunai
+                  </button>
                 </div>
               </div>
 
-              {/* Action Buttons */}
-              <div className="flex space-x-4 mt-10 pt-6 border-t border-gray-200">
+              {/* Buttons */}
+              <div className="flex gap-4 mt-10 border-t pt-6">
                 <button
                   type="button"
                   onClick={handleSubmit}
-                  className="flex-grow bg-[#3B82F6] hover:bg-blue-700 text-white py-3 px-4 rounded-lg font-medium transition duration-200 flex items-center justify-center gap-2"
+                  disabled={loading}
+                  className={`flex-grow ${
+                    loading
+                      ? "bg-gray-400 cursor-not-allowed"
+                      : "bg-[#3B82F6] hover:bg-blue-700"
+                  } text-white py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2`}
                 >
-                  <svg
-                    width="14"
-                    height="16"
-                    viewBox="0 0 14 16"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <g clip-path="url(#clip0_490_696)">
-                      <path
-                        d="M13.7062 3.29376C14.0968 3.68439 14.0968 4.31876 13.7062 4.70939L5.70615 12.7094C5.31553 13.1 4.68115 13.1 4.29053 12.7094L0.290527 8.70939C-0.100098 8.31876 -0.100098 7.68439 0.290527 7.29376C0.681152 6.90314 1.31553 6.90314 1.70615 7.29376L4.9999 10.5844L12.2937 3.29376C12.6843 2.90314 13.3187 2.90314 13.7093 3.29376H13.7062Z"
-                        fill="white"
-                      />
-                    </g>
-                    <defs>
-                      <clipPath id="clip0_490_696">
-                        <path d="M0 0H14V16H0V0Z" fill="white" />
-                      </clipPath>
-                    </defs>
-                  </svg>
-                  Simpan Transaksi
+                  {loading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                      Menyimpan...
+                    </>
+                  ) : (
+                    "Simpan Transaksi"
+                  )}
                 </button>
+
                 <button
                   type="button"
                   onClick={handleCancel}
-                  className="flex-none bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 px-4 rounded-lg font-medium transition duration-200 border border-gray-300 flex items-center justify-center gap-2"
+                  disabled={loading}
+                  className={`${
+                    loading
+                      ? "opacity-50 cursor-not-allowed"
+                      : "hover:bg-gray-200"
+                  } bg-gray-100 border py-3 px-6 rounded-lg transition-colors`}
                 >
                   Batal
                 </button>
@@ -307,7 +324,7 @@ const TambahTransaksi = () => {
                     fill="none"
                     xmlns="http://www.w3.org/2000/svg"
                   >
-                    <g clip-path="url(#clip0_92_525)">
+                    <g clipPath="url(#clip0_92_525)">
                       <path
                         d="M8.5 12C8.8 11.0031 9.42188 10.1531 10.0375 9.30625C10.2 9.08437 10.3625 8.8625 10.5188 8.6375C11.1375 7.74687 11.5 6.66875 11.5 5.50313C11.5 2.4625 9.0375 0 6 0C2.9625 0 0.5 2.4625 0.5 5.5C0.5 6.66563 0.8625 7.74687 1.48125 8.63437C1.6375 8.85938 1.8 9.08125 1.9625 9.30313C2.58125 10.15 3.20312 11.0031 3.5 11.9969H8.5V12ZM6 16C7.38125 16 8.5 14.8813 8.5 13.5V13H3.5V13.5C3.5 14.8813 4.61875 16 6 16ZM3.5 5.5C3.5 5.775 3.275 6 3 6C2.725 6 2.5 5.775 2.5 5.5C2.5 3.56562 4.06562 2 6 2C6.275 2 6.5 2.225 6.5 2.5C6.5 2.775 6.275 3 6 3C4.61875 3 3.5 4.11875 3.5 5.5Z"
                         fill="white"
@@ -334,6 +351,6 @@ const TambahTransaksi = () => {
       </main>
     </div>
   );
-};
+}
 
 export default TambahTransaksi;

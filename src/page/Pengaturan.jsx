@@ -1,5 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Sidebar from "../components/Sidebar";
+import api from "../api/api";
+import { useNavigate } from "react-router-dom";
 
 const Pengaturan = () => {
   const [activePopup, setActivePopup] = useState(null);
@@ -8,6 +10,26 @@ const Pengaturan = () => {
     newPassword: "",
     confirmPassword: "",
   });
+  const [userId, setUserId] = useState(null);
+  const [loadingPassword, setLoadingPassword] = useState(false);
+  const [loadingDelete, setLoadingDelete] = useState(false);
+
+  const navigate = useNavigate();
+
+  // Ambil user.id dari localStorage
+  useEffect(() => {
+    const savedUser = localStorage.getItem("user");
+    if (savedUser) {
+      try {
+        const parsed = JSON.parse(savedUser);
+        if (parsed?.id) {
+          setUserId(parsed.id);
+        }
+      } catch (e) {
+        console.error("Gagal parse user dari localStorage:", e);
+      }
+    }
+  }, []);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -17,18 +39,86 @@ const Pengaturan = () => {
     }));
   };
 
-  const handleGantiPassword = (e) => {
+  // GANTI PASSWORD
+  const handleGantiPassword = async (e) => {
     e.preventDefault();
-    // Handle ganti password logic here
-    console.log("Ganti password:", formData);
-    setActivePopup(null);
-    setFormData({ oldPassword: "", newPassword: "", confirmPassword: "" });
+
+    if (!userId) {
+      alert("User tidak ditemukan. Coba login ulang.");
+      return;
+    }
+
+    if (formData.newPassword !== formData.confirmPassword) {
+      alert("Password baru dan konfirmasi password tidak sama.");
+      return;
+    }
+
+    if (!formData.oldPassword || !formData.newPassword) {
+      alert("Password lama dan password baru wajib diisi.");
+      return;
+    }
+
+    try {
+      setLoadingPassword(true);
+
+      const payload = {
+        old_password: formData.oldPassword,
+        new_password: formData.newPassword,
+      };
+
+      // contoh endpoint: /api/users/:id/password
+      const res = await api.put(`/users/${userId}/password`, payload);
+
+      alert(res.data?.message || "Password updated successfully");
+
+      setActivePopup(null);
+      setFormData({ oldPassword: "", newPassword: "", confirmPassword: "" });
+    } catch (error) {
+      console.error("Error ganti password:", error);
+      const msg =
+        error.response?.data?.message ||
+        "Gagal ganti password. Pastikan password lama benar.";
+      alert(msg);
+    } finally {
+      setLoadingPassword(false);
+    }
   };
 
-  const handleHapusAkun = () => {
-    // Handle hapus akun logic here
-    console.log("Hapus akun");
-    setActivePopup(null);
+  // HAPUS AKUN
+  const handleHapusAkun = async () => {
+    if (!userId) {
+      alert("User tidak ditemukan. Coba login ulang.");
+      return;
+    }
+
+    const yakin = window.confirm(
+      "Apakah kamu yakin ingin menghapus akun? Aksi ini tidak bisa dibatalkan."
+    );
+    if (!yakin) return;
+
+    try {
+      setLoadingDelete(true);
+
+      // contoh endpoint: /api/users/:id
+      await api.delete(`/users/${userId}`);
+
+      alert("Akun berhasil dihapus.");
+
+      // Bersihkan localStorage & logout
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+
+      setActivePopup(null);
+      navigate("/", { replace: true });
+    } catch (error) {
+      console.error("Error hapus akun:", error);
+      const msg =
+        error.response?.data?.message ||
+        "Gagal menghapus akun. Coba lagi nanti.";
+      alert(msg);
+    } finally {
+      setLoadingDelete(false);
+    }
   };
 
   return (
@@ -37,7 +127,7 @@ const Pengaturan = () => {
 
       {/* Konten Utama */}
       <main className="flex-1 p-6">
-        {/* Header dengan Button Transaksi Baru */}
+        {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-2xl font-bold text-gray-800">Pengaturan</h1>
@@ -49,7 +139,7 @@ const Pengaturan = () => {
 
         {/* Container untuk konten utama */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Content Area - Lebar lebih panjang */}
+          {/* Main Content Area */}
           <div className="lg:col-span-4">
             <div className="bg-white rounded-lg shadow-sm">
               {/* Header Card */}
@@ -59,7 +149,7 @@ const Pengaturan = () => {
                 </h2>
               </div>
 
-              {/* Content Area - Tanpa padding horizontal, hanya vertical */}
+              {/* Content Area */}
               <div className="divide-y divide-gray-200">
                 {/* Ganti Password Card */}
                 <button
@@ -79,7 +169,7 @@ const Pengaturan = () => {
                         <path
                           d="M18 0C19.3261 0 20.5979 0.500445 21.5355 1.39124C22.4732 2.28204 23 3.49022 23 4.75V7.6C23.7956 7.6 24.5587 7.90027 25.1213 8.43475C25.6839 8.96922 26 9.69413 26 10.45V16.15C26 16.9059 25.6839 17.6308 25.1213 18.1653C24.5587 18.6997 23.7956 19 23 19H13C12.2044 19 11.4413 18.6997 10.8787 18.1653C10.3161 17.6308 10 16.9059 10 16.15V10.45C10 9.69413 10.3161 8.96922 10.8787 8.43475C11.4413 7.90027 12.2044 7.6 13 7.6V4.75C13 3.49022 13.5268 2.28204 14.4645 1.39124C15.4021 0.500445 16.6739 0 18 0ZM18 11.4C17.4954 11.3998 17.0094 11.5809 16.6395 11.9068C16.2695 12.2328 16.0428 12.6795 16.005 13.1575L16 13.3C16 13.6758 16.1173 14.0431 16.3371 14.3556C16.5568 14.668 16.8692 14.9116 17.2346 15.0554C17.6001 15.1992 18.0022 15.2368 18.3902 15.1635C18.7781 15.0902 19.1345 14.9092 19.4142 14.6435C19.6939 14.3778 19.8844 14.0392 19.9616 13.6707C20.0387 13.3021 19.9991 12.9201 19.8478 12.5729C19.6964 12.2257 19.44 11.929 19.1111 11.7202C18.7822 11.5114 18.3956 11.4 18 11.4ZM18 1.9C17.2044 1.9 16.4413 2.20027 15.8787 2.73475C15.3161 3.26922 15 3.99413 15 4.75V7.6H21V4.75C21 3.99413 20.6839 3.26922 20.1213 2.73475C19.5587 2.20027 18.7956 1.9 18 1.9Z"
                           fill="#374151"
-                          fill-opacity="0.77"
+                          fillOpacity="0.77"
                         />
                       </svg>
                     </div>
@@ -153,7 +243,7 @@ const Pengaturan = () => {
                       name="oldPassword"
                       value={formData.oldPassword}
                       onChange={handleInputChange}
-                      placeholder="masukkan password lama"
+                      placeholder="Masukkan password lama"
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       required
                     />
@@ -194,9 +284,10 @@ const Pengaturan = () => {
                 <div className="flex space-x-3 mt-8">
                   <button
                     type="submit"
-                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-lg font-medium transition duration-200"
+                    disabled={loadingPassword}
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-lg font-medium transition duration-200 disabled:opacity-50"
                   >
-                    Simpan Password
+                    {loadingPassword ? "Menyimpan..." : "Simpan Password"}
                   </button>
                   <button
                     type="button"
@@ -225,7 +316,7 @@ const Pengaturan = () => {
               {/* Header */}
               <div className="p-6 border-b border-gray-200">
                 <h3 className="text-xl font-semibold text-gray-800">
-                  Hapus Akun ?
+                  Hapus Akun?
                 </h3>
               </div>
 
@@ -233,7 +324,8 @@ const Pengaturan = () => {
               <div className="p-6">
                 <div className="mb-6">
                   <p className="text-gray-700 text-center">
-                    Apakah anda yakin akan menghapus akun
+                    Apakah anda yakin akan menghapus akun? Aksi ini tidak dapat
+                    dibatalkan.
                   </p>
                 </div>
 
@@ -242,9 +334,10 @@ const Pengaturan = () => {
                   <button
                     type="button"
                     onClick={handleHapusAkun}
-                    className="flex-1 bg-red-600 hover:bg-red-700 text-white py-3 px-4 rounded-lg font-medium transition duration-200"
+                    disabled={loadingDelete}
+                    className="flex-1 bg-red-600 hover:bg-red-700 text-white py-3 px-4 rounded-lg font-medium transition duration-200 disabled:opacity-50"
                   >
-                    Hapus akun
+                    {loadingDelete ? "Menghapus..." : "Hapus akun"}
                   </button>
                   <button
                     type="button"

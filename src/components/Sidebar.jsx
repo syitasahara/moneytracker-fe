@@ -6,6 +6,21 @@ const Sidebar = () => {
   const navigate = useNavigate();
   const [isMobile, setIsMobile] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  // 🔐 Cek login dulu begitu Sidebar ke-mount
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const user = localStorage.getItem("user");
+
+    if (!token || !user) {
+      setIsAuthenticated(false);
+      // Kalau belum login, paksa ke halaman login
+      navigate("/", { replace: true });
+    } else {
+      setIsAuthenticated(true);
+    }
+  }, [navigate]);
 
   const menuItems = [
     {
@@ -144,16 +159,19 @@ const Sidebar = () => {
   }, []);
 
   const handleNavigation = (path) => {
+    if (!isAuthenticated) return; // jaga-jaga
     navigate(path);
-    // Tutup sidebar di mobile setelah navigasi
     if (isMobile) {
       setIsSidebarOpen(false);
     }
   };
 
   const handleLogout = () => {
-    console.log("Logout clicked");
-    navigate("/login");
+    // 🔓 beneran logout
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    setIsAuthenticated(false);
+    navigate("/", { replace: true });
   };
 
   const toggleSidebar = () => {
@@ -214,28 +232,22 @@ const Sidebar = () => {
           <div className="flex items-center space-x-3">
             {/* Logo MoneyTracker */}
             <div className="relative">
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-md">
-                {/* Icon Uang/Wallet dalam Logo */}
-                <svg 
-                  width="28" 
-                  height="28" 
-                  viewBox="0 0 28 28" 
-                  fill="none" 
+              <div className="w-12 h-12 bg-[#3B82F6] rounded-xl flex items-center justify-center shadow-md">
+                <svg
+                  width="18"
+                  height="16"
+                  viewBox="0 0 18 16"
+                  fill="none"
                   xmlns="http://www.w3.org/2000/svg"
                 >
-                  <rect x="6" y="9" width="16" height="12" rx="2" fill="white"/>
-                  <path d="M8 11H20V19H8V11Z" fill="#3B82F6"/>
-                  <rect x="19" y="12" width="3" height="8" rx="1.5" fill="#3B82F6"/>
-                  <circle cx="21.5" cy="16" r="1" fill="white"/>
-                  <path d="M10 13H12" stroke="white" strokeWidth="2" strokeLinecap="round"/>
-                  <rect x="6" y="9" width="16" height="12" rx="2" stroke="#3B82F6" strokeWidth="2"/>
+                  <path
+                    d="M2.25 0C1.00898 0 0 1.00898 0 2.25V13.5C0 14.741 1.00898 15.75 2.25 15.75H15.75C16.991 15.75 18 14.741 18 13.5V5.625C18 4.38398 16.991 3.375 15.75 3.375H2.8125C2.50312 3.375 2.25 3.12188 2.25 2.8125C2.25 2.50312 2.50312 2.25 2.8125 2.25H15.75C16.3723 2.25 16.875 1.74727 16.875 1.125C16.875 0.502734 16.3723 0 15.75 0H2.25ZM14.625 8.4375C14.9234 8.4375 15.2095 8.55603 15.4205 8.767C15.6315 8.97798 15.75 9.26413 15.75 9.5625C15.75 9.86087 15.6315 10.147 15.4205 10.358C15.2095 10.569 14.9234 10.6875 14.625 10.6875C14.3266 10.6875 14.0405 10.569 13.8295 10.358C13.6185 10.147 13.5 9.86087 13.5 9.5625C13.5 9.26413 13.6185 8.97798 13.8295 8.767C14.0405 8.55603 14.3266 8.4375 14.625 8.4375Z"
+                    fill="white"
+                  />
                 </svg>
               </div>
-              {/* Efek highlight kecil di sudut */}
-              <div className="absolute -top-1 -right-1 w-3 h-3 bg-blue-400 rounded-full"></div>
             </div>
-            
-            {/* Text MoneyTracker */}
+
             <div>
               <h1 className="text-2xl font-bold text-black">MoneyTracker</h1>
               <p className="text-gray-600 text-sm">Keuangan Mahasiswa</p>
@@ -250,15 +262,21 @@ const Sidebar = () => {
               <li key={item.id}>
                 <button
                   onClick={() => handleNavigation(item.path)}
+                  disabled={!isAuthenticated}
                   className={`
                     flex items-center w-full px-4 py-3 rounded-lg transition-colors
-                    ${item.active
-                      ? "bg-blue-600 text-white shadow-md"
-                      : "text-gray-700 hover:bg-blue-50 hover:text-blue-600"
+                    ${
+                      item.active
+                        ? "bg-blue-600 text-white shadow-md"
+                        : "text-gray-700 hover:bg-blue-50 hover:text-blue-600"
                     }
+                    ${!isAuthenticated ? "opacity-50 cursor-not-allowed" : ""}
                   `}
                 >
-                  <span className="mr-3" style={{ color: item.active ? 'white' : 'inherit' }}>
+                  <span
+                    className="mr-3"
+                    style={{ color: item.active ? "white" : "inherit" }}
+                  >
                     {item.icon}
                   </span>
                   <span className="flex-1 text-left">{item.name}</span>

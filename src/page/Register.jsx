@@ -1,26 +1,53 @@
 import React, { useState } from "react";
+import api from "../api/api";
+import { useNavigate } from "react-router-dom";
 
-const Register = () => {
+function Register() {
   const [formData, setFormData] = useState({
-    fullName: "",
+    username: "",
+    phone_number: "",
     email: "",
     password: "",
-    confirmPassword: "",
     agreeTerms: false,
   });
 
+  const navigate = useNavigate();
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData((prevState) => ({
-      ...prevState,
+    setFormData({
+      ...formData,
       [name]: type === "checkbox" ? checked : value,
-    }));
+    });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Handle register logic here
-    console.log("Register attempt:", formData);
+
+    if (!formData.agreeTerms) {
+      alert("Please check Remember Me before continuing.");
+      return;
+    }
+
+    try {
+      const res = await api.post("/auth/register", {
+        username: formData.username,
+        phone_number: formData.phone_number,
+        email: formData.email,
+        password: formData.password,
+      });
+
+      // simpan user ke localStorage
+      if (res.data?.user) {
+        localStorage.setItem("user", JSON.stringify(res.data.user));
+      }
+
+      alert("Registration successful!");
+      navigate("/");
+    } catch (error) {
+      console.error("Registration error:", error);
+      alert("Registration failed. Please try again.");
+    }
   };
 
   return (
@@ -37,42 +64,42 @@ const Register = () => {
 
           {/* Register Form */}
           <form className="space-y-6" onSubmit={handleSubmit}>
-            {/* Full Name Field */}
+            {/* Username Field */}
             <div>
               <label
                 htmlFor="username"
                 className="block text-sm font-medium text-gray-700 mb-2"
               >
                 Username
-              </label> 
+              </label>
               <input
                 id="username"
                 name="username"
                 type="text"
                 autoComplete="name"
                 required
-                value={formData.fullName}
+                value={formData.username}
                 onChange={handleChange}
                 className="appearance-none block w-full px-3 py-3 border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-lg"
                 placeholder="Enter your full name"
               />
             </div>
 
-            {/* No telpon field */}
+            {/* Phone number field */}
             <div>
               <label
-                htmlFor="noTelpon"
+                htmlFor="phone_number"
                 className="block text-sm font-medium text-gray-700 mb-2"
               >
                 No Telpon
               </label>
               <input
-                id="noTelpon"
-                name="noTelpon"
+                id="phone_number"
+                name="phone_number"
                 type="text"
                 autoComplete="tel"
                 required
-                value={formData.noTelpon}
+                value={formData.phone_number}
                 onChange={handleChange}
                 className="appearance-none block w-full px-3 py-3 border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-lg"
                 placeholder="Enter your phone number"
@@ -166,6 +193,6 @@ const Register = () => {
       </div>
     </div>
   );
-};
+}
 
 export default Register;

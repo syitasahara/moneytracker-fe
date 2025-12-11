@@ -1,14 +1,33 @@
 import React, { useState } from "react";
+import api from "../api/api";
+import { useNavigate } from "react-router-dom";
 
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
+  const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Handle login logic here
-    console.log("Login attempt:", { email, password, rememberMe });
+
+    try {
+      const res = await api.post("/auth/login", { email, password, rememberMe });
+
+      // simpan token & user dari response login
+      if (res.data?.token) {
+        localStorage.setItem("token", res.data.token);
+      }
+      if (res.data?.user) {
+        localStorage.setItem("user", JSON.stringify(res.data.user));
+      }
+
+      alert("Login successful!");
+      navigate("/dashboard");
+    } catch (error) {
+      console.error(error);
+      alert("Login failed. Please check your email and password.");
+    }
   };
 
   return (
@@ -67,7 +86,7 @@ function Login() {
               />
             </div>
 
-            {/* Remember Me & Forgot Password */}
+            {/* Remember Me */}
             <div className="flex items-center justify-between">
               <div className="flex items-center">
                 <input
