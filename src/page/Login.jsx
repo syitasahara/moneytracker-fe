@@ -14,7 +14,6 @@ function Login() {
     try {
       const res = await api.post("/auth/login", { email, password, rememberMe });
 
-      // simpan token & user dari response login
       if (res.data?.token) {
         localStorage.setItem("token", res.data.token);
       }

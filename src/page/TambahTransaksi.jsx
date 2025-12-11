@@ -17,7 +17,6 @@ function TambahTransaksi() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  // Fetch categories dari API
   useEffect(() => {
     fetchCategories();
   }, []);
@@ -28,7 +27,6 @@ function TambahTransaksi() {
       setCategories(response.data.categories || []);
     } catch (err) {
       console.error("Error fetching categories:", err);
-      // Fallback ke data static jika API gagal
       setCategories([
         { id: 1, name: "makanan & minuman" },
         { id: 2, name: "transportasi" },
@@ -38,7 +36,6 @@ function TambahTransaksi() {
     }
   };
 
-  // HANDLE INPUT UMUM
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
@@ -52,7 +49,6 @@ function TambahTransaksi() {
     navigate("/riwayat-transaksi");
   };
 
-  // SUBMIT KE BACKEND
   const handleSubmit = async (e) => {
     if (e) e.preventDefault();
 

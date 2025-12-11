@@ -20,7 +20,6 @@ const Dashboard = () => {
   const [categories, setCategories] = useState([]); // categories
   const [loading, setLoading] = useState(true);
 
-  // Warna untuk pie chart
   const COLORS = ["#3B82F6", "#22C55E", "#EAB308", "#EF4444", "#A855F7"];
 
   // Fetch data dari backend saat component mount
@@ -28,7 +27,7 @@ const Dashboard = () => {
     fetchDashboardData();
     fetchStatsData();
     fetchUserProfile();
-    fetchCategories(); // Fetch categories untuk mapping
+    fetchCategories(); 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -39,7 +38,6 @@ const Dashboard = () => {
       setCategories(response.data.categories || []);
     } catch (error) {
       console.error("Error fetching categories:", error);
-      // fallback statis kalau API kategori gagal
       setCategories([
         { id: 1, name: "makanan & minuman" },
         { id: 2, name: "transportasi" },
@@ -53,8 +51,7 @@ const Dashboard = () => {
   const getCategoryName = (categoryId) => {
     if (!categoryId) return "Lainnya";
     const category = categories.find((cat) => cat.id === categoryId);
-    if (!category) return "Lainnya";
-    // Capitalize first letter of each word
+    if (!category) return "Lainnya"; 
     return category.name
       .split(" ")
       .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
@@ -198,7 +195,6 @@ const Dashboard = () => {
 
       {/* Konten Utama Dashboard */}
       <main className="flex-1 p-8">
-        {/* Header dengan Profil dan Button Tambah Transaksi */}
         <div className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-2xl font-bold text-gray-800">
@@ -402,7 +398,6 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Tiga Card Saldo, Pemasukan, Pengeluaran dalam satu baris */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
           {/* Total Saldo */}
           <div className="bg-[#3B82F6] rounded-xl shadow-sm p-6">
@@ -488,7 +483,6 @@ const Dashboard = () => {
 
         {/* Pengeluaran per Kategori dan Transaksi Terbaru */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Pengeluaran per Kategori - Pie Chart di tengah */}
           <div className="bg-white rounded-xl shadow-sm p-6">
             <h2 className="text-lg font-semibold text-gray-700 mb-6">
               Pengeluaran per Kategori

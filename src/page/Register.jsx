@@ -31,7 +31,6 @@ function Register() {
         password: formData.password,
       });
 
-      // simpan user ke localStorage
       if (res.data?.user) {
         localStorage.setItem("user", JSON.stringify(res.data.user));
       }

@@ -20,10 +20,9 @@ const months = [
 
 const getCurrentMonthValue = () => {
   const now = new Date();
-  return months[now.getMonth()].value; // value: "desember", "november", dll
+  return months[now.getMonth()].value; 
 };
 
-// Mapping kategori statis (biar nggak perlu hit /categories yang 404)
 const CATEGORY_NAMES = {
   1: "Makanan & Minuman",
   2: "Transportasi",
@@ -34,13 +33,12 @@ const CATEGORY_NAMES = {
 const COLORS = ["#3B82F6", "#22C55E", "#EAB308", "#EF4444", "#A855F7"];
 
 const Statistik = () => {
-  const [selectedPeriod, setSelectedPeriod] = useState("custom"); // "bulan-lalu" / "custom"
+  const [selectedPeriod, setSelectedPeriod] = useState("custom"); 
   const [selectedMonth, setSelectedMonth] = useState(getCurrentMonthValue);
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Fetch semua transaksi sekali saja, nanti difilter per bulan di frontend
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -62,7 +60,7 @@ const Statistik = () => {
   const handleMonthChange = (e) => {
     const value = e.target.value;
     setSelectedMonth(value);
-    setSelectedPeriod("custom"); // user pilih manual lewat dropdown
+    setSelectedPeriod("custom"); 
   };
 
   const handlePeriodChange = (period) => {
@@ -74,13 +72,11 @@ const Statistik = () => {
       setSelectedPeriod("bulan-lalu");
       setSelectedMonth(months[prevMonthIndex].value);
     } else {
-      // kalau mau nanti tambahin tombol "Bulan ini"
       setSelectedPeriod("custom");
       setSelectedMonth(getCurrentMonthValue());
     }
   };
 
-  // Helper format Rupiah
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat("id-ID").format(amount || 0);
   };
@@ -161,19 +157,18 @@ const Statistik = () => {
   }
 
   // === PENGELUARAN PER MINGGU ===
-  const weeklyExpenses = [0, 0, 0, 0]; // minggu 1-4
+  const weeklyExpenses = [0, 0, 0, 0]; 
 
   monthlyTransactions.forEach((tx) => {
     if (tx.type !== "expense") return;
     const date = new Date(tx.transaction_date || tx.created_at);
-    const day = date.getDate(); // 1-31
-    const weekIndex = Math.min(3, Math.floor((day - 1) / 7)); // 0..3
+    const day = date.getDate(); 
+    const weekIndex = Math.min(3, Math.floor((day - 1) / 7)); 
     weeklyExpenses[weekIndex] += parseFloat(tx.amount) || 0;
   });
 
-  // >>> DI SINI DIBETULIN: PAKAI PIXEL, BUKAN PERSEN <<<
   const maxWeekly = Math.max(...weeklyExpenses, 0);
-  const MAX_BAR_HEIGHT = 120; // px
+  const MAX_BAR_HEIGHT = 120; 
   const weeklyHeights = weeklyExpenses.map((val) =>
     maxWeekly > 0 ? (val / maxWeekly) * MAX_BAR_HEIGHT : 0
   );
@@ -412,7 +407,6 @@ const Statistik = () => {
                         {["Minggu 1", "Minggu 2", "Minggu 3", "Minggu 4"].map(
                           (label, idx) => {
                             const rawHeight = weeklyHeights[idx] || 0;
-                            // jika ada nilai, minimal 10px supaya terlihat
                             const height =
                               weeklyExpenses[idx] > 0
                                 ? Math.max(rawHeight, 10)

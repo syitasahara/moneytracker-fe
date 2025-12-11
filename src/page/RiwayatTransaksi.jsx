@@ -20,7 +20,6 @@ const RiwayatTransaksi = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  // Fetch categories terlebih dahulu, baru transactions
   useEffect(() => {
     const loadData = async () => {
       await fetchCategories();
@@ -97,7 +96,6 @@ const RiwayatTransaksi = () => {
     }
   };
 
-  // Helper format tanggal & waktu
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     const options = { day: "numeric", month: "short", year: "numeric" };

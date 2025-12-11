@@ -3,7 +3,6 @@ import React, { useState } from "react";
 const EditTransaksi = ({ transaction, categories, onSave, onCancel }) => {
   const isPemasukan = transaction.type === "pemasukan";
 
-  // Format date dari format backend ke format input (YYYY-MM-DD)
   function getCurrentDate() {
     const today = new Date();
     return today.toISOString().split("T")[0];
@@ -12,12 +11,10 @@ const EditTransaksi = ({ transaction, categories, onSave, onCancel }) => {
   function formatDateForInput(dateStr) {
     if (!dateStr) return getCurrentDate();
 
-    // Kalau format sudah YYYY-MM-DD / ISO
     if (dateStr.includes("-") && dateStr.split("-").length === 3) {
-      return dateStr.split("T")[0]; // ambil date-nya saja
+      return dateStr.split("T")[0]; 
     }
 
-    // Kalau format display (misal: "16 Nov 2025")
     const parts = dateStr.split(" ");
     if (parts.length === 3) {
       const months = {
@@ -71,12 +68,10 @@ const EditTransaksi = ({ transaction, categories, onSave, onCancel }) => {
 
     let updates = { [name]: value };
 
-    // kategori
     if (name === "category_id") {
       updates.category_id = value ? parseInt(value) : null;
     }
 
-    // metode pembayaran
     if (name === "paymentMethod") {
       updates.rawPaymentMethod = value === "Tunai" ? "cash" : "non-cash";
     }

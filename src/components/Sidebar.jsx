@@ -8,14 +8,13 @@ const Sidebar = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  // 🔐 Cek login dulu begitu Sidebar ke-mount
+  // Cek login dulu begitu Sidebar ke-mount
   useEffect(() => {
     const token = localStorage.getItem("token");
     const user = localStorage.getItem("user");
 
     if (!token || !user) {
       setIsAuthenticated(false);
-      // Kalau belum login, paksa ke halaman login
       navigate("/", { replace: true });
     } else {
       setIsAuthenticated(true);
@@ -141,12 +140,11 @@ const Sidebar = () => {
     },
   ];
 
-  // Cek ukuran layar
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < 1024); // lg breakpoint
+      setIsMobile(window.innerWidth < 1024);
       if (window.innerWidth >= 1024) {
-        setIsSidebarOpen(true); // Selalu buka di desktop
+        setIsSidebarOpen(true); 
       }
     };
 
@@ -159,7 +157,7 @@ const Sidebar = () => {
   }, []);
 
   const handleNavigation = (path) => {
-    if (!isAuthenticated) return; // jaga-jaga
+    if (!isAuthenticated) return; 
     navigate(path);
     if (isMobile) {
       setIsSidebarOpen(false);
@@ -167,7 +165,7 @@ const Sidebar = () => {
   };
 
   const handleLogout = () => {
-    // 🔓 beneran logout
+    // logout
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     setIsAuthenticated(false);

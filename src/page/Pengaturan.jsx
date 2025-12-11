@@ -16,7 +16,6 @@ const Pengaturan = () => {
 
   const navigate = useNavigate();
 
-  // Ambil user.id dari localStorage
   useEffect(() => {
     const savedUser = localStorage.getItem("user");
     if (savedUser) {
@@ -39,7 +38,6 @@ const Pengaturan = () => {
     }));
   };
 
-  // GANTI PASSWORD
   const handleGantiPassword = async (e) => {
     e.preventDefault();
 
@@ -66,7 +64,6 @@ const Pengaturan = () => {
         new_password: formData.newPassword,
       };
 
-      // contoh endpoint: /api/users/:id/password
       const res = await api.put(`/users/${userId}/password`, payload);
 
       alert(res.data?.message || "Password updated successfully");
@@ -84,7 +81,6 @@ const Pengaturan = () => {
     }
   };
 
-  // HAPUS AKUN
   const handleHapusAkun = async () => {
     if (!userId) {
       alert("User tidak ditemukan. Coba login ulang.");
@@ -99,12 +95,10 @@ const Pengaturan = () => {
     try {
       setLoadingDelete(true);
 
-      // contoh endpoint: /api/users/:id
       await api.delete(`/users/${userId}`);
 
       alert("Akun berhasil dihapus.");
 
-      // Bersihkan localStorage & logout
       localStorage.removeItem("token");
       localStorage.removeItem("user");
 
@@ -184,13 +178,11 @@ const Pengaturan = () => {
                   </div>
                 </button>
 
-                {/* Hapus Akun Card */}
                 <button
                   onClick={() => setActivePopup("hapus-akun")}
                   className="w-full text-left p-6 hover:bg-gray-50 transition-all duration-200 flex items-center justify-between"
                 >
                   <div className="flex items-center">
-                    {/* Icon Hapus Akun */}
                     <div className="w-12 h-12 flex items-center justify-center rounded-lg mr-4">
                       <svg
                         width="21"

@@ -6,10 +6,9 @@ import api from "../api/api";
 const ProfilePage = () => {
   const [currentPage, setCurrentPage] = useState("profile");
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true); // loading fetch profile
+  const [loading, setLoading] = useState(true); 
   const [error, setError] = useState(null);
 
-  // Ambil user dari localStorage + refresh dari backend
   useEffect(() => {
     const savedUser = localStorage.getItem("user");
 
@@ -17,7 +16,7 @@ const ProfilePage = () => {
     if (savedUser) {
       try {
         parsedUser = JSON.parse(savedUser);
-        setUser(parsedUser); // tampil dulu dari localStorage
+        setUser(parsedUser); 
       } catch (e) {
         console.error("Gagal parse user dari localStorage:", e);
       }
@@ -50,7 +49,6 @@ const ProfilePage = () => {
     setCurrentPage("edit");
   };
 
-  // updatedUser opsional (isi kalau save, kosong kalau batal)
   const handleBackToProfile = (updatedUser) => {
     if (updatedUser) {
       setUser(updatedUser);
@@ -289,7 +287,6 @@ const ProfilePage = () => {
                   </p>
                 </div>
 
-                {/* sementara pemasukan / pengeluaran masih contoh statis */}
                 <div className="space-y-3 pt-4 border-t border-gray-200">
                   <div className="flex justify-between items-center">
                     <span className="text-gray-600">Pemasukan</span>
@@ -313,9 +310,6 @@ const ProfilePage = () => {
   );
 };
 
-// =======================
-// Halaman Edit Profile
-// =======================
 const EditProfilePage = ({ onBack, user }) => {
   const [formData, setFormData] = useState({
     username: user?.username || "",
@@ -346,14 +340,11 @@ const EditProfilePage = ({ onBack, user }) => {
       setLoading(true);
 
       const form = new FormData();
-      // nama field harus sama dengan yang dipakai di backend (biasanya "image")
       form.append("image", file);
 
-      // ambil token dari localStorage
       const token = localStorage.getItem("token");
 
       const res = await api.put("/users/profile/upload-image", form, {
-        // BIARKAN axios yang set "Content-Type: multipart/form-data"
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
@@ -368,11 +359,9 @@ const EditProfilePage = ({ onBack, user }) => {
         return;
       }
 
-      // update preview & form
       setProfileImage(updatedUser.image);
       setFormData((prev) => ({ ...prev, image: updatedUser.image }));
 
-      // simpan user baru ke localStorage
       localStorage.setItem("user", JSON.stringify(updatedUser));
     } catch (err) {
       console.error("Upload image error:", err?.response || err);
@@ -386,7 +375,7 @@ const EditProfilePage = ({ onBack, user }) => {
   };
 
   const handleCancel = () => {
-    onBack(); // balik tanpa update user lainnya
+    onBack(); 
   };
 
   const handleSubmit = async () => {
@@ -398,7 +387,6 @@ const EditProfilePage = ({ onBack, user }) => {
     try {
       setLoading(true);
 
-      // body yang dikirim ke backend (sesuai nama field backend)
       const payload = {
         username: formData.username,
         phone_number: formData.noTelepon,
@@ -406,19 +394,17 @@ const EditProfilePage = ({ onBack, user }) => {
         domisili: formData.domisili,
         status_mahasiswa: formData.statusMahasiswa,
         jenis_kelamin: formData.jenisKelamin,
-        image: formData.image, // URL dari endpoint upload-image
+        image: formData.image, 
       };
 
       const res = await api.put(`/users/${user.id}`, payload);
 
       const updatedUser = res.data.user;
 
-      // simpan user baru ke localStorage
       localStorage.setItem("user", JSON.stringify(updatedUser));
 
       alert(res.data.message || "Profile updated successfully");
 
-      // kirim user baru ke ProfilePage supaya UI langsung berubah
       onBack(updatedUser);
     } catch (error) {
       console.error("Update profile error:", error);
